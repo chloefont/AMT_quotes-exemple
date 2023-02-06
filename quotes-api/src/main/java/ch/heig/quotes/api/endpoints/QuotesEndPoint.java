@@ -1,5 +1,8 @@
 package ch.heig.quotes.api.endpoints;
 
+import ch.heig.quotes.api.entities.AuthorEntity;
+import ch.heig.quotes.api.exceptions.AuthorNotFoundException;
+import ch.heig.quotes.api.repositories.AuthorRepository;
 import org.openapitools.api.QuotesApi;
 import ch.heig.quotes.api.exceptions.QuoteNotFoundException;
 import org.openapitools.model.Quote;
@@ -22,6 +25,8 @@ public class QuotesEndPoint implements QuotesApi {
 
     @Autowired
     private QuoteRepository quoteRepository;
+    @Autowired
+    private AuthorRepository authorRepository;
 
     @Override
     public ResponseEntity<List<Quote>> getQuotes() {
@@ -30,7 +35,7 @@ public class QuotesEndPoint implements QuotesApi {
         for (QuoteEntity quoteEntity : quoteEntities) {
             Quote quote = new Quote();
             quote.setId(quoteEntity.getId());
-            quote.setAuthor(quoteEntity.getAuthor());
+            quote.setAuthorId(quoteEntity.getAuthor().getId());
             quote.setCitation(quoteEntity.getCitation());
             quotes.add(quote);
         }
@@ -39,10 +44,8 @@ public class QuotesEndPoint implements QuotesApi {
 
     @Override
     public ResponseEntity<Void> addQuote(@RequestBody Quote quote) {
-        QuoteEntity quoteEntity = new QuoteEntity();
-        quoteEntity.setAuthor(quote.getAuthor());
-        quoteEntity.setCitation(quote.getCitation());
-        QuoteEntity quoteAdded = quoteRepository.save(quoteEntity);
+        QuoteEntity quoteAdded = createAndSaveQuote(quote);
+
         URI uri = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
@@ -58,7 +61,7 @@ public class QuotesEndPoint implements QuotesApi {
             QuoteEntity quoteEntity = opt.get();
             Quote quote = new Quote();
             quote.setId(quoteEntity.getId());
-            quote.setAuthor(quoteEntity.getAuthor());
+            quote.setAuthorId(quoteEntity.getAuthor().getId());
             quote.setCitation(quoteEntity.getCitation());
             return new ResponseEntity<Quote>(quote, HttpStatus.OK);
         } else {
@@ -67,4 +70,42 @@ public class QuotesEndPoint implements QuotesApi {
         }
     }
 
+
+    @Override
+    public ResponseEntity<Quote> putQuote(Integer id, Quote quote) {
+        Optional<QuoteEntity> opt = quoteRepository.findById(id);
+        if (opt.isPresent()) {
+            QuoteEntity quoteEntity = opt.get();
+            Optional<AuthorEntity> authorOpt = authorRepository.findById(quote.getAuthorId());
+            if (authorOpt.isPresent()) {
+                quoteEntity.setAuthor(authorOpt.get());
+            } else {
+                throw new QuoteNotFoundException(id);
+            }
+
+            quoteEntity.setCitation(quote.getCitation());
+            return new ResponseEntity<Quote>(quote, HttpStatus.OK);
+        }
+
+        QuoteEntity quoteAdded = createAndSaveQuote(quote);
+
+        URI uri = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(quoteAdded.getId())
+                .toUri();
+
+        return ResponseEntity.created(uri).build();
+    }
+
+    private QuoteEntity createAndSaveQuote(Quote quote) {
+        QuoteEntity quoteEntity = new QuoteEntity();
+        Optional<AuthorEntity> authorOpt = authorRepository.findById(quote.getAuthorId());
+        if (authorOpt.isEmpty()) {
+            throw new AuthorNotFoundException(quote.getAuthorId());
+        }
+        quoteEntity.setAuthor(authorOpt.get());
+        quoteEntity.setCitation(quote.getCitation());
+        return quoteRepository.save(quoteEntity);
+    }
 }

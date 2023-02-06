@@ -69,15 +69,66 @@ paths:
         '404':
           description: Not Found
       deprecated: false
+    put:
+      tags:
+        - Quotes-end-point
+      summary: Modifie ou crée une quote
+      operationId: putQuote
+      parameters:
+        - name: id
+          in: path
+          description: numéro de la quote à modier
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/Quote'
+      responses:
+        '200':
+          description: Quote modifiée
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '201':
+          description: Quote créée
+          headers:
+            Location:
+              description: URL de la quote crée
+              schema:
+                type: string
+                format: uri
+  /authors:
+    get:
+      tags:
+        - Authors-end-point
+      summary: Obtient une liste de tous les auteurs
+      operationId: getAuthors
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Author'
+        '404':
+          description: Not Found
 components:
   schemas:
     Quote:
       description: toutes les caractéristiques d'une quote
       type: object
       properties:
-        author:
-          description: nom de l'auteur
-          type: string
+        authorId:
+          description: id de l'auteur de la quote
+          type: integer
+          format: int32
         citation:
           description: phrase de la citation
           type: string
@@ -86,3 +137,20 @@ components:
           type: integer
           format: int32
       title: Quote
+    Author:
+      description: toutes les caractéristiques d'un auteur
+      type: object
+      properties:
+        name:
+          description: nom de l'auteur
+          type: string
+        id:
+          description: numéro auto-incrémenté de l'auteur
+          type: integer
+          format: int32
+        quotes:
+          description: liste des quotes de l'auteur
+          type: array
+          items:
+            $ref: '#/components/schemas/Quote'
+      title: Author

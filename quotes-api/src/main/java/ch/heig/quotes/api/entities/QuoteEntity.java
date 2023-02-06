@@ -15,12 +15,15 @@ public class QuoteEntity {
     @Id // @GeneratedValue
     @GeneratedValue(strategy = GenerationType.TABLE, generator = "genQuotes")
     private int id;
-    private String author;
+
+    @ManyToOne
+    @JoinColumn(name = "author_id")
+    private AuthorEntity author;
     private String citation;
 
     public QuoteEntity() {}
 
-    public QuoteEntity(int id, String author, String citation) {
+    public QuoteEntity(int id, AuthorEntity author, String citation) {
         this.id = id;
         this.author = author;
         this.citation = citation;
@@ -34,11 +37,11 @@ public class QuoteEntity {
         this.id = id;
     }
 
-    public String getAuthor() {
+    public AuthorEntity getAuthor() {
         return author;
     }
 
-    public void setAuthor(String author) {
+    public void setAuthor(AuthorEntity author) {
         this.author = author;
     }
 
