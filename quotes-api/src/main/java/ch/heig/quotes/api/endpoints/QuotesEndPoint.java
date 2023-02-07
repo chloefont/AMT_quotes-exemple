@@ -108,4 +108,6 @@ public class QuotesEndPoint implements QuotesApi {
         quoteEntity.setCitation(quote.getCitation());
         return quoteRepository.save(quoteEntity);
     }
+
+
 }
